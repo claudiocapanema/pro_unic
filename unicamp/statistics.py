@@ -41,15 +41,19 @@ def line(df, filename, x, y, z, style=None):
     sns.set(style='whitegrid')
 
     figure = sns.lineplot(x=x , y=y, hue=z, data=df, style=style)
+    if filename.find("loss") != -1:
+        print("aqui")
+        figure.set(yscale='log')
     figure = figure.get_figure()
+
     figure.savefig(filename, dpi=400)
 
 if __name__ == "__main__":
 
     directory_data = "output_data1/"
     directory_result = "output_results/"
-    loss_filename_list = ['fedavg_loss', 'qfedavg_loss', 'fedadagrad_loss']
-    acc_filename_list = ['fedavg_acc', 'qfedavg_acc', 'fedadagrad_acc']
+    loss_filename_list = ["FedAvg_loss", "QFedAvg_loss", "FedAdagrad_loss", "FedYogi_loss", "FedAvgM_loss"]
+    acc_filename_list = ["FedAvg_acc", "QFedAvg_acc", "FedAdagrad_acc", "FedYogi_acc", "FedAvgM_acc"]
 
     # Loss
 

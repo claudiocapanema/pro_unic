@@ -10,12 +10,15 @@ python -c "import torch; torch.hub.load( \
         'NVIDIA/DeepLearningExamples:torchhub', \
         'nvidia_efficientnet_b0', pretrained=True)"
 
-python server.py &
-sleep 3  # Sleep for 3s to give the server enough time to start
-
-for i in `seq 0 9`; do
-    echo "Starting client $i"
-    python client.py --partition=${i} &
+for i in `seq 0 4`; do
+  echo "Starting server $i"
+  python server.py --algorithm=${i} --rounds=150&
+  sleep 3  # Sleep for 3s to give the server enough time to start
+  for j in `seq 0 9`; do
+      echo "Starting client $j"
+      python client.py --partition=${j} &
+  done
+  wait
 done
 
 # Enable CTRL+C to stop all background processes

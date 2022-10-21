@@ -1,4 +1,5 @@
 from typing import List, Tuple, Callable, Dict, Optional, Tuple, OrderedDict
+import argparse
 
 import numpy as np
 import torch
@@ -26,7 +27,7 @@ def weighted_average(metrics: List[Tuple[int, Metrics]]) -> Metrics:
 
     # Aggregate and return custom metric (weighted average)
     print("olaaa", " acurácia: ", sum(accuracies) / sum(examples))
-    return {"accuracy": sum(accuracies) / sum(examples), "accuracies": (np.array(accuracies)/sum(examples)).tolist()}
+    return {"accuracy": sum(accuracies) / sum(examples), "accuracies": (np.array(accuracies)/np.array(examples)).tolist()}
 
 def get_on_fit_config_fn():
     """Return a function which returns training configurations."""
@@ -78,10 +79,29 @@ def load_data():
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser(description="Flower")
+    parser.add_argument(
+        "--algorithm",
+        type=int,
+        default=0,
+        choices=range(0, 10),
+        required=False,
+        help="Specifies the algorithm id",
+    )
+    parser.add_argument(
+        "--rounds",
+        type=int,
+        default=0,
+        choices=range(0, 1000),
+        required=False,
+        help="Specifies the number of rounds",
+    )
+    args = parser.parse_args()
+
     # Define strategy
-    index = 2
-    ROUNDS = 10
-    strategy_name = ["fedavg", "qfedavg", "fedadagrad"][index]
+    index = args.algorithm
+    ROUNDS = args.rounds
+    strategy_name = ["FedAvg", "QFedAvg", "FedAdagrad", "FedYogi", "FedAvgM"][index]
 
     def get_eval_fn(server_round,
             weight,
@@ -128,6 +148,7 @@ if __name__ == "__main__":
         initial_parameters=fl.common.ndarrays_to_parameters(model_parameters))
 
     qfedavg = fl.server.strategy.QFedAvg(
+        q_param=0.6,
         evaluate_fn=get_eval_fn,
         evaluate_metrics_aggregation_fn=weighted_average,
         on_fit_config_fn=get_on_fit_config_fn(),
@@ -140,7 +161,19 @@ if __name__ == "__main__":
                                                #on_evaluate_config_fn=get_on_fit_config_fn(),
                                                initial_parameters=fl.common.ndarrays_to_parameters(model_parameters))
 
-    strategy_dict = {'fedavg': fedavg, 'qfedavg': qfedavg, 'fedadagrad': fedadagrad}
+    fedyogi = fl.server.strategy.FedYogi(evaluate_metrics_aggregation_fn=weighted_average,
+                                               on_fit_config_fn=get_on_fit_config_fn(),
+                                               evaluate_fn=get_eval_fn,
+                                               #on_evaluate_config_fn=get_on_fit_config_fn(),
+                                               initial_parameters=fl.common.ndarrays_to_parameters(model_parameters))
+
+    fedavgm = fl.server.strategy.FedAvgM(evaluate_metrics_aggregation_fn=weighted_average,
+                                               on_fit_config_fn=get_on_fit_config_fn(),
+                                               evaluate_fn=get_eval_fn,
+                                               #on_evaluate_config_fn=get_on_fit_config_fn(),
+                                               initial_parameters=fl.common.ndarrays_to_parameters(model_parameters))
+
+    strategy_dict = {'FedAvg': fedavg, 'QFedAvg': qfedavg, 'FedAdagrad': fedadagrad, 'FedYogi': fedyogi, 'FedAvgM': fedavgm}
     strategy = strategy_dict[strategy_name]
     print("Solução: ", strategy_name)
     # Start Flower server
